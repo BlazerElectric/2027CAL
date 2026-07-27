@@ -84,10 +84,9 @@ export async function POST(request: Request) {
 
   const resendApiKey = process.env.RESEND_API_KEY;
   const resendFrom = process.env.RESEND_FROM;
-  const notificationEmail =
-    process.env.SPONSORSHIP_NOTIFICATION_EMAIL ?? "dferguson@buyblazer.com";
+  const notificationEmail = process.env.SPONSORSHIP_NOTIFICATION_EMAIL;
 
-  if (!resendApiKey || !resendFrom) {
+  if (!resendApiKey || !resendFrom || !notificationEmail) {
     await kv.del(claimKey(packageChoice));
     return NextResponse.json(
       { error: "Email delivery is not configured on the server." },
@@ -111,13 +110,10 @@ export async function POST(request: Request) {
         <p><strong>Selected Package:</strong> ${escapeHtml(packageChoice)}</p>
       `,
     });
-  } catch (error) {
+  } catch {
     await kv.del(claimKey(packageChoice));
     return NextResponse.json(
-      {
-        error: "Submission was not completed because the notification email failed.",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Submission was not completed because the notification email failed." },
       { status: 500 },
     );
   }

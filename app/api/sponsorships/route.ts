@@ -82,12 +82,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "That sponsorship package has already been claimed." }, { status: 409 });
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendFrom = process.env.RESEND_FROM;
+  const notificationEmail =
+    process.env.SPONSORSHIP_NOTIFICATION_EMAIL ?? "dferguson@buyblazer.com";
+
+  if (!resendApiKey || !resendFrom) {
+    await kv.del(claimKey(packageChoice));
+    return NextResponse.json(
+      { error: "Email delivery is not configured on the server." },
+      { status: 500 },
+    );
+  }
+
+  const resend = new Resend(resendApiKey);
 
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM ?? "Blazer Electric Supply <onboarding@resend.dev>",
-      to: "dferguson@buyblazer.com",
+      from: resendFrom,
+      to: notificationEmail,
       subject: `New Calendar Sponsorship: ${companyName} - ${packageChoice}`,
       html: `
         <h2>New Calendar Sponsorship Submission</h2>

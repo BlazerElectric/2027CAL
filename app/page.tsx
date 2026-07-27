@@ -28,7 +28,7 @@ export default function HomePage() {
     contactName: "",
     email: "",
     phone: "",
-    packageChoice: PACKAGE_OPTIONS[0],
+    packageChoice: "",
   });
 
   const availablePackages = useMemo(
@@ -52,9 +52,10 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!form.packageChoice || !claimedSpots.includes(form.packageChoice)) return;
-    const nextAvailable = availablePackages[0];
-    setForm((current) => ({ ...current, packageChoice: nextAvailable ?? "" }));
+    if (form.packageChoice && !claimedSpots.includes(form.packageChoice)) return;
+    const nextAvailable = availablePackages[0] ?? "";
+    if (form.packageChoice === nextAvailable) return;
+    setForm((current) => ({ ...current, packageChoice: nextAvailable }));
   }, [availablePackages, claimedSpots, form.packageChoice]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -83,7 +84,7 @@ export default function HomePage() {
         contactName: "",
         email: "",
         phone: "",
-        packageChoice: availablePackages[0] ?? "",
+        packageChoice: "",
       });
       await loadClaims();
     } catch {

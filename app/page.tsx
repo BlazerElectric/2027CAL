@@ -15,7 +15,7 @@ type FormState = {
   contactName: string;
   email: string;
   phone: string;
-  packageChoice: SponsorshipPackage;
+  packageChoice: SponsorshipPackage | "";
 };
 
 export default function HomePage() {
@@ -52,11 +52,9 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!claimedSpots.includes(form.packageChoice)) return;
+    if (!form.packageChoice || !claimedSpots.includes(form.packageChoice)) return;
     const nextAvailable = availablePackages[0];
-    if (nextAvailable) {
-      setForm((current) => ({ ...current, packageChoice: nextAvailable }));
-    }
+    setForm((current) => ({ ...current, packageChoice: nextAvailable ?? "" }));
   }, [availablePackages, claimedSpots, form.packageChoice]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -85,7 +83,7 @@ export default function HomePage() {
         contactName: "",
         email: "",
         phone: "",
-        packageChoice: availablePackages[0] ?? PACKAGE_OPTIONS[0],
+        packageChoice: availablePackages[0] ?? "",
       });
       await loadClaims();
     } catch {

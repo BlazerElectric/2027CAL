@@ -16,7 +16,7 @@ type SponsorshipSubmission = {
   email: string;
   phone: string;
   packageChoice: SponsorshipPackage;
-  createdAt: string;
+  submittedAtUtc: string;
 };
 
 const claimKey = (pkg: SponsorshipPackage) => `sponsorships:claim:${pkg}`;
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     email,
     phone,
     packageChoice,
-    createdAt: new Date().toISOString(),
+    submittedAtUtc: new Date().toISOString(),
   };
 
   const wasClaimed = await kv.set(claimKey(packageChoice), submission, { nx: true });

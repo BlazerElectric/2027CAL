@@ -77,8 +77,8 @@ export async function POST(request: Request) {
     submittedAtUtc: new Date().toISOString(),
   };
 
-  const wasClaimed = await kv.set(claimKey(packageChoice), submission, { nx: true });
-  if (!wasClaimed) {
+  const claimSucceeded = await kv.set(claimKey(packageChoice), submission, { nx: true });
+  if (!claimSucceeded) {
     return NextResponse.json({ error: "That sponsorship package has already been claimed." }, { status: 409 });
   }
 
@@ -89,7 +89,10 @@ export async function POST(request: Request) {
   if (!resendApiKey || !resendFrom || !notificationEmail) {
     await kv.del(claimKey(packageChoice));
     return NextResponse.json(
-      { error: "Email delivery is not configured on the server." },
+      {
+        error:
+          "Email delivery is not configured on the server. Your package was not claimed, so please try again later.",
+      },
       { status: 500 },
     );
   }
@@ -97,7 +100,7 @@ export async function POST(request: Request) {
   const resend = new Resend(resendApiKey);
 
   try {
-    await resend.emails.send({
+    const sendEmail = resend.emails.send({
       from: resendFrom,
       to: notificationEmail,
       subject: `New Calendar Sponsorship: ${companyName} - ${packageChoice}`,
@@ -110,10 +113,20 @@ export async function POST(request: Request) {
         <p><strong>Selected Package:</strong> ${escapeHtml(packageChoice)}</p>
       `,
     });
+
+    await Promise.race([
+      sendEmail,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Email send timed out")), 10_000),
+      ),
+    ]);
   } catch {
     await kv.del(claimKey(packageChoice));
     return NextResponse.json(
-      { error: "Submission was not completed because the notification email failed." },
+      {
+        error:
+          "Submission was not completed because the notification email failed. Your package was not claimed, so please try again.",
+      },
       { status: 500 },
     );
   }
